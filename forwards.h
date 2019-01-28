@@ -90,7 +90,6 @@ public:
 	CDetour *m_pCDownloadListGenerator;
 	IChangeableForward *m_pMapContentList;
 	CDetour *m_pLoggingSeverity;
-	IChangeableForward *m_pServerConsolePrint;
 	
 	ke::ThreadId Thread_Id;
 };

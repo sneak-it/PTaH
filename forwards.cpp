@@ -109,40 +109,12 @@ DETOUR_DECL_MEMBER1(ExecuteStringCommand, bool, const char *, szMsg)
 	return DETOUR_MEMBER_CALL(ExecuteStringCommand)(szMsg);
 }
 
-DETOUR_DECL_MEMBER4(LoggingSeverity, LoggingResponse_t, LoggingChannelID_t, channelID, LoggingSeverity_t, severity, Color, color, const tchar *, pMessage)
-{
-	if(pMessage != NULL && g_pPTaHForwards.m_pServerConsolePrint->GetFunctionCount() > 0)
-	{
-		if(g_pPTaHForwards.Thread_Id == ke::GetCurrentThreadId())
-		{
-			cell_t res = PLUGIN_CONTINUE;
-			g_pPTaHForwards.m_pServerConsolePrint->PushString(pMessage);
-			g_pPTaHForwards.m_pServerConsolePrint->PushCell(severity);
-			g_pPTaHForwards.m_pServerConsolePrint->PushCell(true);
-			g_pPTaHForwards.m_pServerConsolePrint->Execute(&res);
-			
-			if(res != Pl_Continue) return LR_CONTINUE;
-		}
-		else
-		{
-			//Messages not from main thread we cache
-			SCPCacheQueue.push({pMessage, severity});
-		}
-	}
-	return DETOUR_MEMBER_CALL(LoggingSeverity)(channelID, severity, color, pMessage);
-}
-
 void CForwardManager::OnGameFrame(bool simulating)
 {
 	//We send all messages from cache
 	while(!SCPCacheQueue.empty())
 	{
 		SCPCache &Cache = SCPCacheQueue.front();
-		
-		m_pServerConsolePrint->PushString(Cache.sMessage.c_str());
-		m_pServerConsolePrint->PushCell(Cache.severity);
-		m_pServerConsolePrint->PushCell(false);
-		m_pServerConsolePrint->Execute(nullptr);
 		
 		SCPCacheQueue.pop();
 	}
@@ -269,45 +241,13 @@ bool CForwardManager::Init()
 	
 	#ifdef WIN32
 	HMODULE tier0 = GetModuleHandle("tier0.dll");
-	
-	char signature[30];
-	size_t size = UTIL_StringToSignature(g_pGameConf[GameConf_PTaH]->GetKeyValue("ServerConsolePrint_signature_windows"), signature, 30);
-	
-	void * fn = memutils->FindPattern(tier0, signature, size);
-	
-	if(!fn)
-	{
-		smutils->LogError(myself, "Failed get signature ServerConsolePrint.");
-		return false;
-	}
+
 	#else
 	void * tier0 = dlopen("libtier0.so", RTLD_NOW);
 	// Thank you rom4s, Accelerator74
 	void * fn = dlsym(tier0, "LoggingSystem_Log");
 	
-	if(!fn)
-	{
-		smutils->LogError(myself, "Failed get LoggingSystem_Log.");
-		return false;
-	}
-	
-	if(!g_pGameConf[GameConf_PTaH]->GetOffset("ServerConsolePrint", &offset))
-	{
-		smutils->LogError(myself, "Failed to get ServerConsolePrint offset.");
-		return false;
-	}
-	
-	fn = (void *)((intptr_t)fn + offset);
 	#endif
-	
-	m_pLoggingSeverity = DETOUR_CREATE_MEMBER(LoggingSeverity, fn);
-	if (!m_pLoggingSeverity)
-	{
-		smutils->LogError(myself, "Detour failed ServerConsolePrint.");
-		return false;
-	}
-	else m_pLoggingSeverity->EnableDetour();
-	
 	
 	SH_ADD_HOOK(IVEngineServer, ClientPrintf, engine, SH_MEMBER(this, &CForwardManager::ClientPrint), false);
 	SH_ADD_MANUALHOOK(ConnectClient, iserver, SH_MEMBER(this, &CForwardManager::OnClientConnect), false);
@@ -323,7 +263,6 @@ bool CForwardManager::Init()
 	m_pMapContentList = forwards->CreateForwardEx(NULL, ET_Hook, 1, NULL, Param_String);
 	m_pOnClientConnect = forwards->CreateForwardEx(NULL, ET_Hook, 5, NULL, Param_String, Param_String, Param_String, Param_String, Param_String);
 	m_pExecuteStringCommand = forwards->CreateForwardEx(NULL, ET_Hook, 2, NULL, Param_Cell, Param_String);
-	m_pServerConsolePrint = forwards->CreateForwardEx(NULL, ET_Hook, 3, NULL, Param_String, Param_Cell, Param_Cell);
 	
 	return true;
 }
@@ -348,7 +287,6 @@ void CForwardManager::Shutdown()
 	forwards->ReleaseForward(m_pMapContentList);
 	forwards->ReleaseForward(m_pOnClientConnect);
 	forwards->ReleaseForward(m_pExecuteStringCommand);
-	forwards->ReleaseForward(m_pServerConsolePrint);
 }
 
 void CForwardManager::HookClient(int client)

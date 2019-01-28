@@ -67,8 +67,7 @@ enum PTaHType
 	PTaH_ConsolePrint,
 	PTaH_MapContentList,
 	PTaH_OnClientConnect,
-	PTaH_ExecuteStringCommand,
-	PTaH_ServerConsolePrint
+	PTaH_ExecuteStringCommand
 };
 
 /**

@@ -66,7 +66,6 @@ static cell_t PTaH_(IPluginContext *pContext, const cell_t *params)
 			case PTaH_MapContentList : return g_pPTaHForwards.m_pMapContentList->AddFunction(pContext, static_cast<funcid_t>(params[3]));
 			case PTaH_OnClientConnect : return g_pPTaHForwards.m_pOnClientConnect->AddFunction(pContext, static_cast<funcid_t>(params[3]));
 			case PTaH_ExecuteStringCommand : return g_pPTaHForwards.m_pExecuteStringCommand->AddFunction(pContext, static_cast<funcid_t>(params[3]));
-			case PTaH_ServerConsolePrint : return g_pPTaHForwards.m_pServerConsolePrint->AddFunction(pContext, static_cast<funcid_t>(params[3]));
 		}
 	}
 	else
@@ -82,7 +81,6 @@ static cell_t PTaH_(IPluginContext *pContext, const cell_t *params)
 			case PTaH_MapContentList : return g_pPTaHForwards.m_pMapContentList->RemoveFunction(pContext->GetFunctionById(static_cast<funcid_t>(params[3])));
 			case PTaH_OnClientConnect: return g_pPTaHForwards.m_pOnClientConnect->RemoveFunction(pContext->GetFunctionById(static_cast<funcid_t>(params[3])));
 			case PTaH_ExecuteStringCommand : return g_pPTaHForwards.m_pExecuteStringCommand->RemoveFunction(pContext->GetFunctionById(static_cast<funcid_t>(params[3])));
-			case PTaH_ServerConsolePrint : return g_pPTaHForwards.m_pServerConsolePrint->RemoveFunction(pContext->GetFunctionById(static_cast<funcid_t>(params[3])));
 		}
 	}
 	return false;
